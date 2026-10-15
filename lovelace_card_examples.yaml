@@ -1,0 +1,108 @@
+# ==============================================================================
+# ПРИКЛАДИ КАРТОК LOVELACE ТА АВТОМАТИЗАЦІЙ ДЛЯ ПОЛТАВАОБЛЕНЕРГО (ЧЕРГА 3.1)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. СТАНДАРТНА КАРТКА ОБ'ЄКТІВ (ENTITIES CARD)
+# Працює в будь-якому Home Assistant без встановлення додаткових плагінів!
+# ------------------------------------------------------------------------------
+type: entities
+title: Графік світла (Полтава, Черга 3.1)
+show_header_toggle: false
+entities:
+  - entity: sensor.poltava_power_3_1_current_status
+    name: Поточний стан
+  - entity: binary_sensor.poltava_power_3_1_power_scheduled
+    name: Наявність живлення за планом
+  - entity: sensor.poltava_power_3_1_next_outage
+    name: Наступне відключення
+  - entity: sensor.poltava_power_3_1_next_restore
+    name: Очікуване увімкнення
+  - entity: sensor.poltava_power_3_1_today_schedule
+    name: Відключення на сьогодні
+  - entity: sensor.poltava_power_3_1_tomorrow_schedule
+    name: Відключення на завтра
+  - entity: sensor.poltava_power_3_1_last_update
+    name: Оновлено обленерго
+
+# ------------------------------------------------------------------------------
+# 2. ІНТЕРАКТИВНА ВІЗУАЛЬНА ТАБЛИЦЯ ПО ГОДИНАХ (MARKDOWN CARD)
+# Генерує кольорову шкалу на 24 години:
+# 🟩 Зелений — світло є
+# 🟥 Червоний — відключення
+# 🟨 Жовтий — можливе відключення
+# ------------------------------------------------------------------------------
+type: markdown
+title: Шкала відключень на сьогодні (Черга 3.1)
+content: >
+  {% set hourly = state_attr('sensor.poltava_power_3_1_current_status', 'hourly_today') %}
+  {% set cur_h = now().hour + 1 %}
+  {% if hourly %}
+  <div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; text-align: center; font-size: 11px;">
+  {% for h in range(1, 25) %}
+    {% set val = hourly[h|string] or hourly[h] %}
+    {% set is_cur = (h == cur_h) %}
+    {% set bg = '#4CAF50' if val == 'yes' else ('#F44336' if val == 'no' else '#FF9800') %}
+    {% set border = '2px solid #FFFFFF' if is_cur else 'none' %}
+    <div style="background-color: {{ bg }}; color: white; padding: 6px 2px; border-radius: 4px; border: {{ border }}; font-weight: bold;">
+      {{ '%02d' % (h-1) }}<br/>
+      {% if val == 'yes' %}🟢{% elif val == 'no' %}🔴{% else %}🟡{% endif %}
+    </div>
+  {% endfor %}
+  </div>
+  <p style="margin-top: 10px; font-size: 13px;">
+    <b>Сьогодні:</b> {{ states('sensor.poltava_power_3_1_today_schedule') }}<br/>
+    <b>Завтра:</b> {{ states('sensor.poltava_power_3_1_tomorrow_schedule') }}
+  </p>
+  {% else %}
+  Дані графіка завантажуються...
+  {% endif %}
+
+# ------------------------------------------------------------------------------
+# 3. КАРТКА ОФІЦІЙНОГО ГРАФІЧНОГО РОЗКЛАДУ (PICTURE ENTITY)
+# Відображає актуальну картинку розкладу для черги 3.1 від Полтаваобленерго
+# ------------------------------------------------------------------------------
+type: picture-entity
+entity: image.poltava_power_3_1_image_queue
+name: Графік Полтаваобленерго (Черга 3.1)
+show_state: false
+show_name: true
+
+# ------------------------------------------------------------------------------
+# 4. КАЛЕНДАР ВІДКЛЮЧЕНЬ (CALENDAR CARD)
+# Дозволяє бачити розклад у вигляді блоків у календарі HA
+# ------------------------------------------------------------------------------
+type: calendar
+entities:
+  - calendar.poltava_power_3_1
+initial_view: dayGridDay
+
+# ------------------------------------------------------------------------------
+# 5. ПРИКЛАДИ АВТОМАТИЗАЦІЙ (AUTOMATIONS)
+# Скопіюйте у ваш automations.yaml або створіть через візуальний редактор
+# ------------------------------------------------------------------------------
+
+# Сповіщення в Telegram / телефон за 30 хвилин до вимкнення світла:
+# - id: notify_before_poltava_outage
+#   alias: "Полтава 3.1: Попередження про відключення за 30 хв"
+#   trigger:
+#     - platform: time
+#       at: sensor.poltava_power_3_1_next_outage
+#       offset: "-00:30:00"
+#   action:
+#     - service: notify.notify
+#       data:
+#         title: "⚠️ Увага! Черга 3.1"
+#         message: "За 30 хвилин планове відключення електроенергії в Полтаві!"
+
+# Увімкнення зарядної станції (EcoFlow / Bluetti) за 1 годину до відключення:
+# - id: charge_station_before_outage
+#   alias: "Полтава 3.1: Зарядити станцію перед відключенням"
+#   trigger:
+#     - platform: time
+#       at: sensor.poltava_power_3_1_next_outage
+#       offset: "-01:00:00"
+#   action:
+#     - service: switch.turn_on
+#       target:
+#         entity_id: switch.ecoflow_socket

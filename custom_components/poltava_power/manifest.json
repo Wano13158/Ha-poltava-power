@@ -1,0 +1,12 @@
+{
+  "domain": "poltava_power",
+  "name": "Poltava Power Outages (Полтаваобленерго ГПВ)",
+  "codeowners": ["@grut123"],
+  "config_flow": true,
+  "documentation": "https://github.com/grut123/ha-poltava-power",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/grut123/ha-poltava-power/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

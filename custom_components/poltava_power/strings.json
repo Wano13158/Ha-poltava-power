@@ -1,0 +1,79 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Полтаваобленерго (Графік відключень ГПВ)",
+        "description": "Оберіть вашу чергу та підчергу електропостачання в м. Полтава та Полтавській області (наприклад, 3.1).",
+        "data": {
+          "queue": "Черга та підчерга",
+          "update_interval": "Інтервал оновлення даних (хвилини)",
+          "include_possible": "Враховувати можливі відключення як вимкнення"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Не вдалося отримати дані з джерела",
+      "unknown": "Несподівана помилка"
+    },
+    "abort": {
+      "already_configured": "Ця черга вже налаштована в Home Assistant"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Налаштування моніторингу черги",
+        "description": "Змініть параметри черги або джерела даних.",
+        "data": {
+          "queue": "Черга та підчерга",
+          "update_interval": "Інтервал оновлення (хвилини)",
+          "include_possible": "Враховувати можливі відключення як вимкнення",
+          "data_url": "URL джерела даних JSON"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "current_status": {
+        "name": "Поточний стан"
+      },
+      "next_outage": {
+        "name": "Наступне відключення"
+      },
+      "next_restore": {
+        "name": "Увімкнення світла"
+      },
+      "today_schedule": {
+        "name": "Графік на сьогодні"
+      },
+      "tomorrow_schedule": {
+        "name": "Графік на завтра"
+      },
+      "last_update": {
+        "name": "Останнє оновлення графіка"
+      }
+    },
+    "binary_sensor": {
+      "scheduled_power": {
+        "name": "Світло за графіком"
+      }
+    },
+    "calendar": {
+      "calendar": {
+        "name": "Календар відключень"
+      }
+    },
+    "image": {
+      "queue_schedule_image": {
+        "name": "Графік черги"
+      },
+      "summary_today_image": {
+        "name": "Загальний графік на сьогодні"
+      },
+      "summary_tomorrow_image": {
+        "name": "Загальний графік на завтра"
+      }
+    }
+  }
+}

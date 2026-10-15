@@ -1,0 +1,79 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Poltava Oblenergo (Outage Schedule)",
+        "description": "Select your electricity group/subgroup for Poltava and Poltava Oblast (e.g., 3.1).",
+        "data": {
+          "queue": "Queue / Group (черга)",
+          "update_interval": "Update interval (minutes)",
+          "include_possible": "Treat possible outages as guaranteed outages"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to outage data source",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This queue is already configured in Home Assistant"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Poltava Oblenergo Options",
+        "description": "Update queue settings or data source URL.",
+        "data": {
+          "queue": "Queue / Group (черга)",
+          "update_interval": "Update interval (minutes)",
+          "include_possible": "Treat possible outages as guaranteed outages",
+          "data_url": "JSON data source URL"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "current_status": {
+        "name": "Current Status"
+      },
+      "next_outage": {
+        "name": "Next Outage"
+      },
+      "next_restore": {
+        "name": "Power Restore"
+      },
+      "today_schedule": {
+        "name": "Today Schedule"
+      },
+      "tomorrow_schedule": {
+        "name": "Tomorrow Schedule"
+      },
+      "last_update": {
+        "name": "Schedule Last Updated"
+      }
+    },
+    "binary_sensor": {
+      "scheduled_power": {
+        "name": "Scheduled Power"
+      }
+    },
+    "calendar": {
+      "calendar": {
+        "name": "Outage Calendar"
+      }
+    },
+    "image": {
+      "queue_schedule_image": {
+        "name": "Queue Schedule Image"
+      },
+      "summary_today_image": {
+        "name": "Today Summary Image"
+      },
+      "summary_tomorrow_image": {
+        "name": "Tomorrow Summary Image"
+      }
+    }
+  }
+}
