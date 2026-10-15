@@ -33,23 +33,24 @@ class PoltavaCalendarEntity(
     _attr_has_entity_name = True
     _attr_attribution = ATTRIBUTION
     _attr_translation_key = "calendar"
+    _attr_name = "Календар"
+    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator: PoltavaDataUpdateCoordinator) -> None:
         """Initialize the calendar entity."""
         super().__init__(coordinator)
         self.queue = coordinator.queue
         self._attr_unique_id = f"poltava_power_{self.queue}_calendar"
-        self._attr_name = f"Календар відключень (Черга {self.queue})"
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
         return DeviceInfo(
             identifiers={(DOMAIN, f"poltava_power_{self.queue}")},
-            name=f"Полтаваобленерго (Черга {self.queue})",
+            name=f"Полтава (Черга {self.queue})",
             manufacturer="АТ 'ПОЛТАВАОБЛЕНЕРГО'",
-            model=f"ГПВ Графік відключень (Черга {self.queue})",
-            sw_version="1.0.0",
+            model=f"ГПВ Черга {self.queue}",
+            sw_version="1.1.0",
             configuration_url="https://www.poe.pl.ua/disconnection/power-outages/",
         )
 

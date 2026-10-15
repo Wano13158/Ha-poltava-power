@@ -8,6 +8,7 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -36,13 +37,15 @@ class PoltavaPowerBinarySensor(
     _attr_device_class = BinarySensorDeviceClass.POWER
     _attr_attribution = ATTRIBUTION
     _attr_translation_key = "scheduled_power"
+    _attr_name = "Світло за графіком"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator: PoltavaDataUpdateCoordinator) -> None:
         """Initialize the binary sensor."""
         super().__init__(coordinator)
         self.queue = coordinator.queue
         self._attr_unique_id = f"poltava_power_{self.queue}_power_scheduled"
-        self._attr_name = f"Світло за графіком (Черга {self.queue})"
 
     @property
     def is_on(self) -> bool:
@@ -59,10 +62,10 @@ class PoltavaPowerBinarySensor(
         """Return device information."""
         return DeviceInfo(
             identifiers={(DOMAIN, f"poltava_power_{self.queue}")},
-            name=f"Полтаваобленерго (Черга {self.queue})",
+            name=f"Полтава (Черга {self.queue})",
             manufacturer="АТ 'ПОЛТАВАОБЛЕНЕРГО'",
-            model=f"ГПВ Графік відключень (Черга {self.queue})",
-            sw_version="1.0.0",
+            model=f"ГПВ Черга {self.queue}",
+            sw_version="1.1.0",
             configuration_url="https://www.poe.pl.ua/disconnection/power-outages/",
         )
 

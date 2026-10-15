@@ -41,6 +41,7 @@ class PoltavaBaseImage(
 
     _attr_has_entity_name = True
     _attr_attribution = ATTRIBUTION
+    _attr_entity_registry_enabled_default = False
 
     def __init__(
         self, coordinator: PoltavaDataUpdateCoordinator, hass: HomeAssistant
@@ -57,10 +58,10 @@ class PoltavaBaseImage(
         """Return device information."""
         return DeviceInfo(
             identifiers={(DOMAIN, f"poltava_power_{self.queue}")},
-            name=f"Полтаваобленерго (Черга {self.queue})",
+            name=f"Полтава (Черга {self.queue})",
             manufacturer="АТ 'ПОЛТАВАОБЛЕНЕРГО'",
-            model=f"ГПВ Графік відключень (Черга {self.queue})",
-            sw_version="1.0.0",
+            model=f"ГПВ Черга {self.queue}",
+            sw_version="1.1.0",
             configuration_url="https://www.poe.pl.ua/disconnection/power-outages/",
         )
 
@@ -95,6 +96,7 @@ class PoltavaQueueScheduleImage(PoltavaBaseImage):
     """Image entity for the specific queue schedule."""
 
     _attr_translation_key = "queue_schedule_image"
+    _attr_name = "Графік черги (зображення)"
 
     def __init__(
         self, coordinator: PoltavaDataUpdateCoordinator, hass: HomeAssistant
@@ -102,7 +104,6 @@ class PoltavaQueueScheduleImage(PoltavaBaseImage):
         """Initialize the entity."""
         super().__init__(coordinator, hass)
         self._attr_unique_id = f"poltava_power_{self.queue}_image_queue"
-        self._attr_name = f"Графік відключень (Черга {self.queue})"
 
     @property
     def image_url(self) -> str:
@@ -114,6 +115,7 @@ class PoltavaSummaryTodayImage(PoltavaBaseImage):
     """Image entity for the summary schedule of all queues today."""
 
     _attr_translation_key = "summary_today_image"
+    _attr_name = "Загальний графік на сьогодні"
 
     def __init__(
         self, coordinator: PoltavaDataUpdateCoordinator, hass: HomeAssistant
@@ -121,7 +123,6 @@ class PoltavaSummaryTodayImage(PoltavaBaseImage):
         """Initialize the entity."""
         super().__init__(coordinator, hass)
         self._attr_unique_id = f"poltava_power_{self.queue}_image_today"
-        self._attr_name = f"Загальний графік на сьогодні (Черга {self.queue})"
 
     @property
     def image_url(self) -> str:
@@ -133,6 +134,7 @@ class PoltavaSummaryTomorrowImage(PoltavaBaseImage):
     """Image entity for the summary schedule of all queues tomorrow."""
 
     _attr_translation_key = "summary_tomorrow_image"
+    _attr_name = "Загальний графік на завтра"
 
     def __init__(
         self, coordinator: PoltavaDataUpdateCoordinator, hass: HomeAssistant
@@ -140,7 +142,6 @@ class PoltavaSummaryTomorrowImage(PoltavaBaseImage):
         """Initialize the entity."""
         super().__init__(coordinator, hass)
         self._attr_unique_id = f"poltava_power_{self.queue}_image_tomorrow"
-        self._attr_name = f"Загальний графік на завтра (Черга {self.queue})"
 
     @property
     def image_url(self) -> str:

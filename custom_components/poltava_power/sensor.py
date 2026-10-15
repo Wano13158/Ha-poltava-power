@@ -9,6 +9,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -34,11 +35,13 @@ async def async_setup_entry(
 
     async_add_entities(
         [
+            # 3 основных активных сенсора (не перегружают интерфейс)
             PoltavaCurrentStatusSensor(coordinator),
-            PoltavaNextOutageSensor(coordinator),
-            PoltavaNextRestoreSensor(coordinator),
             PoltavaTodayScheduleSensor(coordinator),
+            PoltavaNextOutageSensor(coordinator),
+            # Дополнительные сенсоры (выключены по умолчанию, можно включить при желании)
             PoltavaTomorrowScheduleSensor(coordinator),
+            PoltavaNextRestoreSensor(coordinator),
             PoltavaLastUpdatedSensor(coordinator),
         ]
     )
@@ -60,10 +63,10 @@ class PoltavaBaseSensor(CoordinatorEntity[PoltavaDataUpdateCoordinator], SensorE
         """Return device information."""
         return DeviceInfo(
             identifiers={(DOMAIN, f"poltava_power_{self.queue}")},
-            name=f"Полтаваобленерго (Черга {self.queue})",
+            name=f"Полтава (Черга {self.queue})",
             manufacturer="АТ 'ПОЛТАВАОБЛЕНЕРГО'",
-            model=f"ГПВ Графік відключень (Черга {self.queue})",
-            sw_version="1.0.0",
+            model=f"ГПВ Черга {self.queue}",
+            sw_version="1.1.0",
             configuration_url="https://www.poe.pl.ua/disconnection/power-outages/",
         )
 
@@ -72,12 +75,12 @@ class PoltavaCurrentStatusSensor(PoltavaBaseSensor):
     """Sensor for current electricity schedule status."""
 
     _attr_translation_key = "current_status"
+    _attr_name = "Поточний стан"
 
     def __init__(self, coordinator: PoltavaDataUpdateCoordinator) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = f"poltava_power_{self.queue}_current_status"
-        self._attr_name = f"Поточний стан (Черга {self.queue})"
 
     @property
     def native_value(self) -> str:
@@ -116,81 +119,17 @@ class PoltavaCurrentStatusSensor(PoltavaBaseSensor):
         }
 
 
-class PoltavaNextOutageSensor(PoltavaBaseSensor):
-    """Sensor for next scheduled outage timestamp."""
-
-    _attr_device_class = SensorDeviceClass.TIMESTAMP
-    _attr_icon = "mdi:clock-alert-outline"
-    _attr_translation_key = "next_outage"
-
-    def __init__(self, coordinator: PoltavaDataUpdateCoordinator) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator)
-        self._attr_unique_id = f"poltava_power_{self.queue}_next_outage"
-        self._attr_name = f"Наступне відключення (Черга {self.queue})"
-
-    @property
-    def native_value(self) -> datetime | None:
-        """Return timestamp of the next outage start."""
-        return self.coordinator.data.next_outage_start
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return attributes about the next outage."""
-        start = self.coordinator.data.next_outage_start
-        end = self.coordinator.data.next_outage_end
-        attrs: dict[str, Any] = {"queue": self.queue}
-        if start:
-            attrs["start_time"] = start.strftime("%H:%M")
-            attrs["start_date"] = start.strftime("%Y-%m-%d")
-        if end:
-            attrs["end_time"] = end.strftime("%H:%M")
-        if start and end:
-            duration_mins = int((end - start).total_seconds() / 60)
-            attrs["duration_minutes"] = duration_mins
-        return attrs
-
-
-class PoltavaNextRestoreSensor(PoltavaBaseSensor):
-    """Sensor for when power is scheduled to return."""
-
-    _attr_device_class = SensorDeviceClass.TIMESTAMP
-    _attr_icon = "mdi:clock-check-outline"
-    _attr_translation_key = "next_restore"
-
-    def __init__(self, coordinator: PoltavaDataUpdateCoordinator) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator)
-        self._attr_unique_id = f"poltava_power_{self.queue}_next_restore"
-        self._attr_name = f"Увімкнення світла (Черга {self.queue})"
-
-    @property
-    def native_value(self) -> datetime | None:
-        """Return timestamp of next power restore."""
-        return self.coordinator.data.next_restore
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return attributes about power restoration."""
-        restore = self.coordinator.data.next_restore
-        attrs: dict[str, Any] = {"queue": self.queue}
-        if restore:
-            attrs["restore_time"] = restore.strftime("%H:%M")
-            attrs["restore_date"] = restore.strftime("%Y-%m-%d")
-        return attrs
-
-
 class PoltavaTodayScheduleSensor(PoltavaBaseSensor):
     """Sensor for today's summary outage schedule."""
 
     _attr_icon = "mdi:calendar-today"
     _attr_translation_key = "today_schedule"
+    _attr_name = "Графік на сьогодні"
 
     def __init__(self, coordinator: PoltavaDataUpdateCoordinator) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = f"poltava_power_{self.queue}_today_schedule"
-        self._attr_name = f"Графік на сьогодні (Черга {self.queue})"
 
     @property
     def native_value(self) -> str:
@@ -216,17 +155,53 @@ class PoltavaTodayScheduleSensor(PoltavaBaseSensor):
         }
 
 
+class PoltavaNextOutageSensor(PoltavaBaseSensor):
+    """Sensor for next scheduled outage timestamp."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:clock-alert-outline"
+    _attr_translation_key = "next_outage"
+    _attr_name = "Наступне відключення"
+
+    def __init__(self, coordinator: PoltavaDataUpdateCoordinator) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._attr_unique_id = f"poltava_power_{self.queue}_next_outage"
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Return timestamp of the next outage start."""
+        return self.coordinator.data.next_outage_start
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return attributes about the next outage."""
+        start = self.coordinator.data.next_outage_start
+        end = self.coordinator.data.next_outage_end
+        attrs: dict[str, Any] = {"queue": self.queue}
+        if start:
+            attrs["start_time"] = start.strftime("%H:%M")
+            attrs["start_date"] = start.strftime("%Y-%m-%d")
+        if end:
+            attrs["end_time"] = end.strftime("%H:%M")
+        if start and end:
+            duration_mins = int((end - start).total_seconds() / 60)
+            attrs["duration_minutes"] = duration_mins
+        return attrs
+
+
 class PoltavaTomorrowScheduleSensor(PoltavaBaseSensor):
     """Sensor for tomorrow's summary outage schedule."""
 
     _attr_icon = "mdi:calendar-arrow-right"
     _attr_translation_key = "tomorrow_schedule"
+    _attr_name = "Графік на завтра"
+    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator: PoltavaDataUpdateCoordinator) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = f"poltava_power_{self.queue}_tomorrow_schedule"
-        self._attr_name = f"Графік на завтра (Черга {self.queue})"
 
     @property
     def native_value(self) -> str:
@@ -252,17 +227,49 @@ class PoltavaTomorrowScheduleSensor(PoltavaBaseSensor):
         }
 
 
+class PoltavaNextRestoreSensor(PoltavaBaseSensor):
+    """Sensor for when power is scheduled to return."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:clock-check-outline"
+    _attr_translation_key = "next_restore"
+    _attr_name = "Увімкнення світла"
+    _attr_entity_registry_enabled_default = False
+
+    def __init__(self, coordinator: PoltavaDataUpdateCoordinator) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._attr_unique_id = f"poltava_power_{self.queue}_next_restore"
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Return timestamp of next power restore."""
+        return self.coordinator.data.next_restore
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return attributes about power restoration."""
+        restore = self.coordinator.data.next_restore
+        attrs: dict[str, Any] = {"queue": self.queue}
+        if restore:
+            attrs["restore_time"] = restore.strftime("%H:%M")
+            attrs["restore_date"] = restore.strftime("%Y-%m-%d")
+        return attrs
+
+
 class PoltavaLastUpdatedSensor(PoltavaBaseSensor):
     """Sensor indicating when the oblenergo schedule was last updated."""
 
     _attr_icon = "mdi:update"
     _attr_translation_key = "last_update"
+    _attr_name = "Оновлення графіка"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator: PoltavaDataUpdateCoordinator) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = f"poltava_power_{self.queue}_last_update"
-        self._attr_name = f"Останнє оновлення графіка (Черга {self.queue})"
 
     @property
     def native_value(self) -> str:

@@ -2,12 +2,12 @@
   "config": {
     "step": {
       "user": {
-        "title": "Poltava Oblenergo (Outage Schedule)",
-        "description": "Select your electricity group/subgroup for Poltava and Poltava Oblast (e.g., 3.1).",
+        "title": "Poltava Oblenergo",
+        "description": "Select your electricity group/subgroup (e.g., 3.1).",
         "data": {
           "queue": "Queue / Group (черга)",
           "update_interval": "Update interval (minutes)",
-          "include_possible": "Treat possible outages as guaranteed outages"
+          "include_possible": "Treat possible outages as guaranteed"
         }
       }
     },
@@ -16,18 +16,18 @@
       "unknown": "Unexpected error"
     },
     "abort": {
-      "already_configured": "This queue is already configured in Home Assistant"
+      "already_configured": "This queue is already configured"
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Poltava Oblenergo Options",
-        "description": "Update queue settings or data source URL.",
+        "title": "Poltava Queue Options",
+        "description": "Update queue settings.",
         "data": {
           "queue": "Queue / Group (черга)",
           "update_interval": "Update interval (minutes)",
-          "include_possible": "Treat possible outages as guaranteed outages",
+          "include_possible": "Treat possible outages as guaranteed",
           "data_url": "JSON data source URL"
         }
       }
@@ -38,20 +38,20 @@
       "current_status": {
         "name": "Current Status"
       },
-      "next_outage": {
-        "name": "Next Outage"
-      },
-      "next_restore": {
-        "name": "Power Restore"
-      },
       "today_schedule": {
         "name": "Today Schedule"
+      },
+      "next_outage": {
+        "name": "Next Outage"
       },
       "tomorrow_schedule": {
         "name": "Tomorrow Schedule"
       },
+      "next_restore": {
+        "name": "Power Restore"
+      },
       "last_update": {
-        "name": "Schedule Last Updated"
+        "name": "Schedule Updated"
       }
     },
     "binary_sensor": {
@@ -61,18 +61,18 @@
     },
     "calendar": {
       "calendar": {
-        "name": "Outage Calendar"
+        "name": "Calendar"
       }
     },
     "image": {
       "queue_schedule_image": {
-        "name": "Queue Schedule Image"
+        "name": "Queue Schedule"
       },
       "summary_today_image": {
-        "name": "Today Summary Image"
+        "name": "Today Summary"
       },
       "summary_tomorrow_image": {
-        "name": "Tomorrow Summary Image"
+        "name": "Tomorrow Summary"
       }
     }
   }
