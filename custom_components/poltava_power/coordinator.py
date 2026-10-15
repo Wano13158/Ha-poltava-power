@@ -160,10 +160,21 @@ class PoltavaDataUpdateCoordinator(DataUpdateCoordinator[PoltavaData]):
                 elif is_tomorrow:
                     tomorrow_hourly[h] = val
 
-                # 1st 30 minutes of hour h
-                s1 = "off" if val in ("no", "first") else ("maybe" if val == "mfirst" else "on")
-                # 2nd 30 minutes of hour h
-                s2 = "off" if val in ("no", "second") else ("maybe" if val == "msecond" else "on")
+                # Determine 30-minute slots based on Poltavaoblenergo definitions
+                if val == "no":
+                    s1, s2 = "off", "off"
+                elif val == "yes":
+                    s1, s2 = "on", "on"
+                elif val == "first":
+                    s1, s2 = "off", "on"
+                elif val == "second":
+                    s1, s2 = "on", "off"
+                elif val == "mfirst":
+                    s1, s2 = "maybe", "on"
+                elif val == "msecond":
+                    s1, s2 = "off", "maybe"
+                else:
+                    s1, s2 = "on", "on"
 
                 t1 = day_dt + timedelta(hours=h - 1)
                 t2 = t1 + timedelta(minutes=30)
@@ -262,13 +273,17 @@ class PoltavaDataUpdateCoordinator(DataUpdateCoordinator[PoltavaData]):
                     next_restore = iv.end
                     break
 
-        # Generate summary texts (including both guaranteed and possible outages)
-        today_outages_text = self._format_schedule_full(today_intervals)
+        # Generate summary texts (clean time ranges matching the official graphic chart)
+        today_outages_text = self._format_intervals_summary(
+            [iv for iv in today_intervals if iv.state == "off"]
+        )
         today_possible_text = self._format_intervals_summary(
             [iv for iv in today_intervals if iv.state == "maybe"]
         )
 
-        tomorrow_outages_text = self._format_schedule_full(tomorrow_intervals)
+        tomorrow_outages_text = self._format_intervals_summary(
+            [iv for iv in tomorrow_intervals if iv.state == "off"]
+        )
         tomorrow_possible_text = self._format_intervals_summary(
             [iv for iv in tomorrow_intervals if iv.state == "maybe"]
         )
