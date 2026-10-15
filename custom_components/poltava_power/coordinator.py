@@ -57,6 +57,7 @@ class PoltavaData:
     current_slot_raw: str = "yes"
     next_outage_start: datetime | None = None
     next_outage_end: datetime | None = None
+    next_outage_state: str = "off"
     next_restore: datetime | None = None
     today_outages_text: str = "Немає відключень"
     today_possible_text: str = "Немає"
@@ -233,37 +234,41 @@ class PoltavaDataUpdateCoordinator(DataUpdateCoordinator[PoltavaData]):
         # Calculate next outage & next restore
         next_outage_start: datetime | None = None
         next_outage_end: datetime | None = None
+        next_outage_state: str = "off"
         next_restore: datetime | None = None
 
         if is_outage and cur_interval:
-            # Currently off: restore is end of current outage block
-            next_restore = cur_interval.end
+            # Currently off/maybe: restore is end of current consecutive outage block
+            restore_candidate = cur_interval.end
+            for iv in merged_intervals:
+                if iv.start == restore_candidate and iv.state in outage_check_states:
+                    restore_candidate = iv.end
+            next_restore = restore_candidate
+
             # Next outage is the first outage that starts after restore
             for iv in merged_intervals:
-                if iv.start >= next_restore and iv.state in outage_check_states:
+                if iv.start >= next_restore and iv.state in ("off", "maybe"):
                     next_outage_start = iv.start
                     next_outage_end = iv.end
+                    next_outage_state = iv.state
                     break
         else:
-            # Currently on: next outage is first one in the future
+            # Currently on: next event is first upcoming outage or possible outage
             for iv in merged_intervals:
-                if iv.start > now and iv.state in outage_check_states:
+                if iv.start > now and iv.state in ("off", "maybe"):
                     next_outage_start = iv.start
                     next_outage_end = iv.end
+                    next_outage_state = iv.state
                     next_restore = iv.end
                     break
 
-        # Generate summary texts
-        today_outages_text = self._format_intervals_summary(
-            [iv for iv in today_intervals if iv.state == "off"]
-        )
+        # Generate summary texts (including both guaranteed and possible outages)
+        today_outages_text = self._format_schedule_full(today_intervals)
         today_possible_text = self._format_intervals_summary(
             [iv for iv in today_intervals if iv.state == "maybe"]
         )
 
-        tomorrow_outages_text = self._format_intervals_summary(
-            [iv for iv in tomorrow_intervals if iv.state == "off"]
-        )
+        tomorrow_outages_text = self._format_schedule_full(tomorrow_intervals)
         tomorrow_possible_text = self._format_intervals_summary(
             [iv for iv in tomorrow_intervals if iv.state == "maybe"]
         )
@@ -287,6 +292,7 @@ class PoltavaDataUpdateCoordinator(DataUpdateCoordinator[PoltavaData]):
             current_slot_raw=current_slot_raw,
             next_outage_start=next_outage_start,
             next_outage_end=next_outage_end,
+            next_outage_state=next_outage_state,
             next_restore=next_restore,
             today_outages_text=today_outages_text,
             today_possible_text=today_possible_text,
@@ -309,6 +315,26 @@ class PoltavaDataUpdateCoordinator(DataUpdateCoordinator[PoltavaData]):
         if state == "maybe":
             return f"Можливе відключення (Черга {self.queue})"
         return f"Світло є (Черга {self.queue})"
+
+    @staticmethod
+    def _format_schedule_full(intervals: list[PoltavaInterval]) -> str:
+        """Format intervals including guaranteed and possible outages."""
+        outage_ivs = [iv for iv in intervals if iv.state in ("off", "maybe")]
+        if not outage_ivs:
+            return "Немає відключень"
+
+        has_maybe = any(iv.state == "maybe" for iv in outage_ivs)
+        parts = []
+        for iv in outage_ivs:
+            time_str = f"{iv.start.strftime('%H:%M')} - {iv.end.strftime('%H:%M')}"
+            if iv.state == "maybe":
+                parts.append(f"{time_str} можливе відключення")
+            else:
+                if has_maybe:
+                    parts.append(f"{time_str} відключення")
+                else:
+                    parts.append(time_str)
+        return ", ".join(parts)
 
     @staticmethod
     def _format_intervals_summary(intervals: list[PoltavaInterval]) -> str:

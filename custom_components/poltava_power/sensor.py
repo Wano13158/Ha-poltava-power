@@ -156,12 +156,10 @@ class PoltavaTodayScheduleSensor(PoltavaBaseSensor):
 
 
 class PoltavaNextOutageSensor(PoltavaBaseSensor):
-    """Sensor for next scheduled outage timestamp."""
+    """Sensor for next scheduled power event (outage or power restore)."""
 
     _attr_device_class = SensorDeviceClass.TIMESTAMP
-    _attr_icon = "mdi:clock-alert-outline"
     _attr_translation_key = "next_outage"
-    _attr_name = "Наступне відключення"
 
     def __init__(self, coordinator: PoltavaDataUpdateCoordinator) -> None:
         """Initialize the sensor."""
@@ -169,24 +167,56 @@ class PoltavaNextOutageSensor(PoltavaBaseSensor):
         self._attr_unique_id = f"poltava_power_{self.queue}_next_outage"
 
     @property
+    def name(self) -> str:
+        """Return dynamic name depending on current state."""
+        if self.coordinator.data.is_outage:
+            return "Увімкнення світла"
+        if self.coordinator.data.next_outage_state == "maybe":
+            return "Можливе відключення"
+        return "Наступне відключення"
+
+    @property
+    def icon(self) -> str:
+        """Return dynamic icon based on current state."""
+        if self.coordinator.data.is_outage:
+            return "mdi:clock-check-outline"
+        if self.coordinator.data.next_outage_state == "maybe":
+            return "mdi:clock-outline"
+        return "mdi:clock-alert-outline"
+
+    @property
     def native_value(self) -> datetime | None:
-        """Return timestamp of the next outage start."""
+        """Return timestamp of next event: restore if blackout, or outage if power on."""
+        if self.coordinator.data.is_outage:
+            return self.coordinator.data.next_restore
         return self.coordinator.data.next_outage_start
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return attributes about the next outage."""
-        start = self.coordinator.data.next_outage_start
-        end = self.coordinator.data.next_outage_end
-        attrs: dict[str, Any] = {"queue": self.queue}
-        if start:
-            attrs["start_time"] = start.strftime("%H:%M")
-            attrs["start_date"] = start.strftime("%Y-%m-%d")
-        if end:
-            attrs["end_time"] = end.strftime("%H:%M")
-        if start and end:
-            duration_mins = int((end - start).total_seconds() / 60)
-            attrs["duration_minutes"] = duration_mins
+        """Return attributes about the upcoming event."""
+        data = self.coordinator.data
+        attrs: dict[str, Any] = {
+            "queue": self.queue,
+            "is_outage": data.is_outage,
+            "event_type": "restore" if data.is_outage else "outage",
+        }
+        target_dt = data.next_restore if data.is_outage else data.next_outage_start
+        if target_dt:
+            attrs["time"] = target_dt.strftime("%H:%M")
+            attrs["date"] = target_dt.strftime("%Y-%m-%d")
+
+        if data.is_outage:
+            attrs["description"] = "Очікуване увімкнення світла"
+            if data.next_outage_start:
+                attrs["following_outage"] = data.next_outage_start.strftime("%H:%M")
+        else:
+            attrs["description"] = "Планове відключення світла"
+            if data.next_outage_end:
+                attrs["end_time"] = data.next_outage_end.strftime("%H:%M")
+            if data.next_outage_start and data.next_outage_end:
+                attrs["duration_minutes"] = int(
+                    (data.next_outage_end - data.next_outage_start).total_seconds() / 60
+                )
         return attrs
 
 
